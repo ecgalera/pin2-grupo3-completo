@@ -179,7 +179,7 @@ Resources:
                   server_name localhost;
 
                   location / {
-                      proxy_pass http://nginx:80/stub_status;
+                      proxy_pass http://nginx/stub_status;
                       proxy_set_header Host \$host;
                       proxy_set_header X-Real-IP \$remote_addr;
                   }
