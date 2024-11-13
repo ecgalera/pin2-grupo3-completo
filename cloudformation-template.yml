@@ -3,6 +3,7 @@ Parameters:
   KeyName:
     Type: String
     Description: "The name of the SSH key pair to use"
+
 Resources:
   MyVPC:
     Type: "AWS::EC2::VPC"
@@ -102,6 +103,7 @@ Resources:
           
           # Actualizar el sistema
           apt-get update -y | tee -a /var/log/user-data.log
+          apt-get upgrade -y | tee -a /var/log/user-data.log
           
           # Instalar Docker
           apt-get install -y docker.io | tee -a /var/log/user-data.log
@@ -159,16 +161,34 @@ Resources:
           
           # Crear archivo nginx.conf
           cat <<EOF > /home/ubuntu/nginx.conf
-          server {
-              location /stub_status {
-                  stub_status on;
-                  access_log off;
-                  allow all;
-              }
-              location / {
-                  proxy_pass http://localhost:8080;
-                  proxy_set_header Host $host;
-                  proxy_set_header X-Real-IP $remote_addr;
+          worker_processes 1;
+
+          events {
+              worker_connections 1024;
+          }
+
+          http {
+              include /etc/nginx/mime.types;
+              default_type application/octet-stream;
+
+              sendfile on;
+              keepalive_timeout 65;
+
+              server {
+                  listen 80;
+                  server_name localhost;
+
+                  location / {
+                      proxy_pass http://localhost:8080;
+                      proxy_set_header Host \$host;
+                      proxy_set_header X-Real-IP \$remote_addr;
+                  }
+
+                  location /stub_status {
+                      stub_status on;
+                      access_log off;
+                      allow all;
+                  }
               }
           }
           EOF
